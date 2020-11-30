@@ -1,7 +1,7 @@
 from datetime import datetime
-from DatabaseManager import DatabaseManager
-import EmailUtils
-from JiraManager import JiraManager
+from database_manager import database_manager
+import email_utils
+from jira_manager import jira_manager
 import telebot
 import json
 import logging
@@ -13,7 +13,7 @@ with open(os.path.dirname(os.path.abspath(__file__)) + '/../conf/app_settings.js
 
 try:
 
-    jira = JiraManager()
+    jira = jira_manager()
     bot = telebot.TeleBot(settings['Telebot token'])
 
     filters = jira.db.get_filters_by_group('notification')
@@ -43,4 +43,4 @@ except Exception as e:
                  'Отправка email (MailingTelegram - error):\n' +
                  str(e) + "\n\n" + traceback.format_exc()
                  )
-    EmailUtils.send_email("MailingTelegram - error", str(e) + "\n\n" + traceback.format_exc())
+    email_utils.send_email("MailingTelegram - error", str(e) + "\n\n" + traceback.format_exc())

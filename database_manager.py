@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 
-class DatabaseManager:
+class database_manager:
 
     def __init__(self):
         with open(os.path.dirname(os.path.abspath(__file__)) + '/../conf/app_settings.json', encoding='utf-8') as settings_file:
@@ -147,7 +147,7 @@ class DatabaseManager:
             # Обновляем данные в таблице
             query = """
                     UPDATE %s SET condition = '%s'
-                    WHERE group_name = '%s' AND owner_name = '%s' AND filter_name = '%s'
+                    WHERE group_name = '%s' AND owner_name = '%s' AND name = '%s'
                     """ % (self.table_name_filters, condition.replace("'", '"'), group_name,
                             owner_name, filter_name)
             cursor.execute(query)

@@ -1,7 +1,7 @@
 from datetime import datetime
-from DatabaseManager import DatabaseManager
-from JiraManager import JiraManager
-import EmailUtils
+from database_manager import database_manager
+from jira_manager import jira_manager
+import email_utils
 import telebot
 import json
 import logging
@@ -15,26 +15,20 @@ with open(os.path.dirname(os.path.abspath(__file__)) + '/../conf/app_settings.js
 def bot_polling():
 
     try:
-        db = DatabaseManager()
-        jira = JiraManager()
+        db = database_manager()
+        jira = jira_manager()
 
         bot = telebot.TeleBot(settings['Telebot token'])
 
-
         def contain_this_user_in_whitelist(authorize_data):
             for user in settings["Whitelist"]:
-                if user['VW Bank JIRA login'] == authorize_data[0] and user['FIS JIRA login'] == authorize_data[1]:
+                if user['Username'] == authorize_data[1] and user['Password'] == authorize_data[2]:
                     return True
             return False
 
 
         def request_authorize(tg_id):
             bot.send_message(tg_id, settings['Command messages']['request authorize'])
-
-
-        def authorize_message_transform(message):
-            start_letter = message.index("DKX")
-            return message[start_letter:len(message)].split(", ")
 
 
         def authorize_this_user(chat, authorize_data):
@@ -80,8 +74,9 @@ def bot_polling():
 
         @bot.message_handler(commands=['authorize'])
         def authorize(message):
-            if "/authorize " in message.html_text:
-                authorize_this_user(message.chat, authorize_message_transform(message.html_text))
+            input = message.html_text.split(" ")
+            if len(input) == 3 and "/authorize " in message.html_text:
+                authorize_this_user(message.chat, input)
             else:
                 bot.send_message(message.from_user.id, settings['Command messages']['default'])
 
@@ -91,7 +86,10 @@ def bot_polling():
             if not db.contain_this_user_in_db(message.chat.id):
                 request_authorize(message.chat.id)
             else:
-                if "/create" in message.html_text and "ISD" in message.reply_to_message.html_text:
+
+                input = message.html_text.split(" ")
+
+                if len(input) == 1 and "/create" in message.html_text and hasattr(message, "reply_to_message"):
 
                     jira_outer_session = jira.check_jira_outer_session()
                     issue_key = message.reply_to_message.html_text.split(" ")[0]
@@ -102,7 +100,7 @@ def bot_polling():
                     else:
                         raise Exception(result)
 
-                elif "/create PR" in message.html_text:
+                elif len(input) == 2 and "/create" in message.html_text:
 
                     jira_outer_session = jira.check_jira_outer_session()
                     issue_key = message.html_text.split(" ")[1]
@@ -118,8 +116,11 @@ def bot_polling():
             if not db.contain_this_user_in_db(message.chat.id):
                 request_authorize(message.chat.id)
             else:
-                if "/comment PR" in message.html_text and message.reply_to_message.html_text:
-                    issue_key = message.reply_to_message.html_text.split(" ")[1]
+
+                input = message.html_text.split(" ")
+
+                if len(input) == 2 and hasattr(message, "reply_to_message"):
+                    issue_key = input[1]
 
                     result = jira.send_comment_to_inner_issue(issue_key, message.reply_to_message.html_text)
 
@@ -175,8 +176,9 @@ def bot_polling():
 
         # @bot.message_handler(content_types=['text'])
         # def get_text_messages(message):
-        #     if "Авторизация: " in message.html_text:
-        #         authorize_this_user(message.chat, authorize_message_transform(message.html_text))
+        #    input = message.html_text.split(" ")
+        #    if len(input) == 3 and "/authorize " in message.html_text:
+        #        authorize_this_user(message.chat, input)
         #     else:
         #         bot.send_message(message.from_user.id, settings['Command messages']['default'])
 
@@ -198,6 +200,6 @@ def bot_polling():
                         'Отправка email (TelegramBot - error):\n' +
                         str(e) + "\n\n" + traceback_str
                         )
-            EmailUtils.send_email("TelegramBot - error", str(e) + "\n\n" + traceback_str)
+            email_utils.send_email("TelegramBot - error", str(e) + "\n\n" + traceback_str)
 
 bot_polling()

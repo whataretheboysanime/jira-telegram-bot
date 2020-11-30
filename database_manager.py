@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 
 
-class DatabaseManager:
+class database_manager:
 
     def __init__(self):
         with open(os.path.dirname(os.path.abspath(__file__)) + '/../conf/app_settings.json', encoding='utf-8') as settings_file:

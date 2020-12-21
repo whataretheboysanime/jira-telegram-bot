@@ -200,6 +200,15 @@ class jira_manager:
 
                 inner_issue = self.jira_inner.issue(finded_inner_issue[0].key)
 
+                # Блок переоткрытия задачи
+
+                if 'Reopen' in outer_issue.fields.status.name and not 'Reopen' in inner_issue.fields.status.name:
+                    transitions = self.jiraInner.transitions(inner_issue)
+                    reopen_transition = [t['id'] for t in transitions if 'Reopen' in t['name']]
+
+                    if reopen_transition:
+                        self.jiraInner.transition_issue(inner_issue, reopen_transition[0])
+
                 outer_issue_summary = outer_issue.key + ' ' + outer_issue.fields.summary
                 if outer_issue_summary != inner_issue.fields.summary:
                     inner_issue.update(summary=outer_issue_summary)

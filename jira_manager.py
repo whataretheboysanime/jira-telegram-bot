@@ -130,7 +130,7 @@ class jira_manager:
 
             return 'Success'
 
-    def create_issue(self, key, jira_outer_session):
+    def create_issue(self, project_name, key, jira_outer_session):
         logging.basicConfig(filename=self.log_filename, level=logging.INFO)
         logging.info(
             datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " + "Start create_issue " + key)
@@ -140,21 +140,25 @@ class jira_manager:
         issue_summary = issue.key + ' ' + issue.fields.summary
         issue_description = issue.fields.description
 
+        # Если не передали наименование проекта, то скидываем в дефолтный
+        if not project_name:
+            project_name = self.settings["JIRA settings"]["Project name (default)"]
+
         # Создать задачу
-        new_issue = self.jira_inner.create_issue(project=self.settings["JIRA settings"]["Project name"], summary=issue_summary,
+        new_issue = self.jira_inner.create_issue(project=project_name, summary=issue_summary,
                                                 description=issue_description,
-                                                issuetype={'name': self.settings["JIRA settings"]["Issues type"]})
+                                                issuetype={'name': self.settings["JIRA settings"]["Issues type (default)"]})
         # Переназначить задачу
         self.jira_inner.assign_issue(new_issue, None)
 
         for user in self.settings["JIRA settings"]["Watchers"]:
             # Добавить вотчеров
-            self.jira_inner.add_watcher(new_issue, user["Login"])
+            self.jira_inner.add_watcher(new_issue, user)
 
         # Проставить приоритет
         new_issue.update(priority={"id": issue.fields.priority.id})
 
-        labels = [label["Name"] for label in self.settings["JIRA settings"]["Labels"]]
+        labels = [label for label in self.settings["JIRA settings"]["Labels"]]
 
         if labels:
             new_issue.update(fields={"labels": labels})
@@ -177,7 +181,7 @@ class jira_manager:
         return "Success"
 
     # Обновление задач
-    def update_issues_from_outer_to_inner(self):
+    def update_issues_from_outer_to_inner(self, project_name):
         logging.basicConfig(filename=self.log_filename, level=logging.INFO)
         logging.info(
             datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " + "Start update_issues_from_outer_to_inner")
@@ -189,7 +193,7 @@ class jira_manager:
             finded_inner_issue = self.get_inner_issue_by_filter('summary ~ ' + outer_issue.key)
 
             if not finded_inner_issue:
-                self.create_issue(outer_issue.key, jira_outer_session)
+                self.create_issue(project_name, outer_issue.key, jira_outer_session)
                 return "Success"
             else:
 
@@ -269,7 +273,7 @@ class jira_manager:
 
         return "Success"
 
-    def create_issues_from_outer_to_inner(self):
+    def create_issues_from_outer_to_inner(self, project_name):
         logging.basicConfig(filename=self.log_filename, level=logging.INFO)
         logging.info(
             datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " + "Start create_issues_from_outer_to_inner")
@@ -289,7 +293,11 @@ class jira_manager:
                                 )
                     is_found_issue = True
             if not is_found_issue:
-                issue_single_jql = 'project = ' + self.settings["JIRA settings"]["Project name"] + ' AND text ~ "' + key + '"'
+
+                if not project_name:
+                    project_name = self.settings["JIRA settings"]["Project name"]
+
+                issue_single_jql = 'project = ' + project_name + ' AND text ~ "' + key + '"'
                 issues_list_single_inner = self.jira_inner.search_issues(issue_single_jql)
                 if len(issues_list_single_inner) == 0:
                     self.create_issue(key, jira_outer_session)
@@ -320,7 +328,12 @@ class jira_manager:
                             logging.info(datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " + "Closing issue " +
                                          issue_inner.key
                                          )
-                            self.jira_inner.transition_issue(issue_inner, '131')
+
+                            transitions = self.jira_inner.transitions(issue_inner)
+                            close_transition = [t['id'] for t in transitions if 'Close' in t['name']]
+
+                            if close_transition:
+                                self.jira_inner.transition_issue(issue_inner, close_transition[0])
                         except Exception:
                             pass
                             logging.info(datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " +

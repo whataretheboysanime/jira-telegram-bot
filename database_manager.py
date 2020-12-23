@@ -127,28 +127,28 @@ class database_manager:
         # Сохраняем изменения
         conn.commit()
 
-    def add_filter(self, group_name, owner_name, filter_name, condition):
+    def add_filter(self, group_name, owner_name, filter_name, project_name, condition):
         with sqlite3.connect(self.database_name) as conn:
             cursor = conn.cursor()
             cur_datetime = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             # Вставляем данные в таблицу
             query = """
-                    INSERT INTO %s (creation_date, group_name, owner_name, name, condition)
-                    VALUES('%s', '%s', '%s', '%s', '%s')
+                    INSERT INTO %s (creation_date, group_name, owner_name, name, project_name, condition)
+                    VALUES('%s', '%s', '%s', '%s', '%s', '%s')
                     """ % (self.table_name_filters, cur_datetime, group_name,
-                            owner_name, filter_name, condition.replace("'", '"'))
+                            owner_name, filter_name, project_name, condition.replace("'", '"'))
             cursor.execute(query)
             # Сохраняем изменения
             conn.commit()
 
-    def update_filter(self, group_name, owner_name, filter_name, condition):
+    def update_filter(self, group_name, owner_name, filter_name, project_name, condition):
         with sqlite3.connect(self.database_name) as conn:
             cursor = conn.cursor()
             # Обновляем данные в таблице
             query = """
-                    UPDATE %s SET condition = '%s'
+                    UPDATE %s SET condition = '%s', project_name = '%s',
                     WHERE group_name = '%s' AND owner_name = '%s' AND name = '%s'
-                    """ % (self.table_name_filters, condition.replace("'", '"'), group_name,
+                    """ % (self.table_name_filters, condition.replace("'", '"'), project_name, group_name,
                             owner_name, filter_name)
             cursor.execute(query)
             # Сохраняем изменения
@@ -179,9 +179,9 @@ class database_manager:
 
         with sqlite3.connect(self.database_name) as conn:
             cursor = conn.cursor()
-            query = "SELECT name, owner_name, condition FROM %s WHERE group_name = '%s'" % (self.table_name_filters, group_name)
+            query = "SELECT name, owner_name, project_name, condition FROM %s WHERE group_name = '%s'" % (self.table_name_filters, group_name)
             for filter in cursor.execute(query):
-                filters.append({'name': filter[0], 'owner_name': filter[1], 'condition': filter[2]})
+                filters.append({'name': filter[0], 'owner_name': filter[1],  'project_name': filter[2], 'condition': filter[3]})
 
         return filters
 

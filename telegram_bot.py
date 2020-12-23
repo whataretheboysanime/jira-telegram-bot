@@ -40,10 +40,11 @@ def bot_polling():
 
         def parse_add_filter_command(message, group_name, method):
             splitted_message = message.split(' ')
-            if len(splitted_message) > 3:
+            if len(splitted_message) > 4:
                 command = splitted_message[0]
                 owner_name = splitted_message[1]
                 filter_name = splitted_message[2]
+                project_name = splitted_message[3]
 
                 matched_filter = re.search(r'"(.*)"', message)
                 if matched_filter:
@@ -52,9 +53,17 @@ def bot_polling():
                     filter_value = matched_value[1 : matched_value_length - 1]
 
                     if method == 'add':
-                        jira.db.add_filter(group_name, owner_name, filter_name, filter_value)
+                        if db.contain_filter_by_name(filter_name):
+                            return 'Filter exist'
+                        else:
+                            jira.db.add_filter(group_name, owner_name, filter_name, project_name, filter_value)
+                            return 'Filter added'
                     elif method == 'update':
-                        jira.db.update_filter(group_name, owner_name, filter_name, filter_value)
+                        if not db.contain_filter_by_name(filter_name):
+                            return 'Filter not exist'
+                        else:
+                            jira.db.update_filter(group_name, owner_name, filter_name, project_name, filter_value)
+                            return 'Filter updated'
 
         @bot.message_handler(commands=['start', 'help'])
         def start_message(message):
@@ -89,23 +98,25 @@ def bot_polling():
 
                 input = message.html_text.split(" ")
 
-                if len(input) == 1 and "/create" in message.html_text and hasattr(message, "reply_to_message"):
+                if len(input) == 2 and "/create" in message.html_text and hasattr(message, "reply_to_message"):
 
                     jira_outer_session = jira.check_jira_outer_session()
                     issue_key = message.reply_to_message.html_text.split(" ")[0]
+                    project_name = message.html_text.split(" ")[1]
 
-                    result = jira.create_issue(issue_key, jira_outer_session)
+                    result = jira.create_issue(project_name, issue_key, jira_outer_session)
                     if result == "Success":
                         bot.send_message(message.chat.id, settings['Command messages']['create issue success'])
                     else:
                         raise Exception(result)
 
-                elif len(input) == 2 and "/create" in message.html_text:
+                elif len(input) == 3 and "/create" in message.html_text:
 
                     jira_outer_session = jira.check_jira_outer_session()
-                    issue_key = message.html_text.split(" ")[1]
+                    project_name = message.html_text.split(" ")[1]
+                    issue_key = message.html_text.split(" ")[2]
 
-                    result = jira.create_issue(issue_key, jira_outer_session)
+                    result = jira.create_issue(project_name, issue_key, jira_outer_session)
                     if result == "Success":
                         bot.send_message(message.chat.id, settings['Command messages']['create issue success'])
                     else:
@@ -136,16 +147,24 @@ def bot_polling():
             if not db.contain_this_user_in_db(message.chat.id):
                 request_authorize(message.chat.id)
             else:
-                parse_add_filter_command(message.html_text, 'notification', 'add')
-                bot.send_message(message.chat.id, settings['Command messages']['create filter success'])
+                result = parse_add_filter_command(message.html_text, 'notification', 'add')
+
+                if result == 'Filter exist':
+                    bot.send_message(message.chat.id, settings['Command messages']['create filter exist'])
+                elif result == 'Filter added':
+                    bot.send_message(message.chat.id, settings['Command messages']['create filter success'])
 
         @bot.message_handler(commands=['add_filter_creation'])
         def add_filter_creation(message):
             if not db.contain_this_user_in_db(message.chat.id):
                 request_authorize(message.chat.id)
             else:
-                parse_add_filter_command(message.html_text, 'creation', 'add')
-                bot.send_message(message.chat.id, settings['Command messages']['create filter success'])
+                result = parse_add_filter_command(message.html_text, 'creation', 'add')
+                
+                if result == 'Filter exist':
+                    bot.send_message(message.chat.id, settings['Command messages']['create filter exist'])
+                elif result == 'Filter added':
+                    bot.send_message(message.chat.id, settings['Command messages']['create filter success'])
 
         @bot.message_handler(commands=['delete_filter'])
         def delete_filter(message):
@@ -154,24 +173,36 @@ def bot_polling():
             else:
                 splitted_message = message.html_text.split(' ')
                 if len(splitted_message) == 2:
-                    jira.db.delete_filter(splitted_message[1])
-                    bot.send_message(message.chat.id, settings['Command messages']['delete filter success'])
+
+                    if not db.contain_filter_by_name(splitted_message[1]):
+                        bot.send_message(message.chat.id, settings['Command messages']['delete filter not exist'])
+                    else:
+                        jira.db.delete_filter(splitted_message[1])
+                        bot.send_message(message.chat.id, settings['Command messages']['delete filter success'])                   
 
         @bot.message_handler(commands=['update_filter_notification'])
         def update_filter_notification(message):
             if not db.contain_this_user_in_db(message.chat.id):
                 request_authorize(message.chat.id)
             else:
-                parse_add_filter_command(message.html_text, 'notification', 'update')
-                bot.send_message(message.chat.id, settings['Command messages']['update filter success'])
+                result = parse_add_filter_command(message.html_text, 'notification', 'update')
+                
+                if result == 'Filter not exist':
+                    bot.send_message(message.chat.id, settings['Command messages']['update filter not exist'])
+                elif result == 'Filter updated':
+                    bot.send_message(message.chat.id, settings['Command messages']['update filter success'])
 
         @bot.message_handler(commands=['update_filter_creation'])
         def update_filter_creation(message):
             if not db.contain_this_user_in_db(message.chat.id):
                 request_authorize(message.chat.id)
             else:
-                parse_add_filter_command(message.html_text, 'creation', 'update')
-                bot.send_message(message.chat.id, settings['Command messages']['update filter success'])
+                result = parse_add_filter_command(message.html_text, 'creation', 'update')
+
+                if result == 'Filter not exist':
+                    bot.send_message(message.chat.id, settings['Command messages']['update filter not exist'])
+                elif result == 'Filter updated':
+                    bot.send_message(message.chat.id, settings['Command messages']['update filter success'])
 
 
         # @bot.message_handler(content_types=['text'])

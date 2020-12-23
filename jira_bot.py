@@ -62,7 +62,13 @@ try:
             jira.current_outer_issues = outer_filter
             jira.current_inner_issues = inner_filter
 
-            jira.create_issues_from_outer_to_inner()
+            project_name = [
+                    filter['project_name']
+                    for filter in current_filters
+                    if filter['owner_name'] == 'inner'
+                ][0]
+
+            jira.create_issues_from_outer_to_inner(project_name)
 
             # Закроем задачи которые уже закрыты
             jira.close_inner_issues_from_outer()
@@ -72,7 +78,7 @@ try:
             jira.current_outer_issues = outer_filter + ''\
                                     ' AND updated < "' + upper_datetime + '" AND updated > "' + lower_datetime + '"'
 
-            jira.update_issues_from_outer_to_inner()
+            jira.update_issues_from_outer_to_inner(project_name)
 
     logging.info(datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "  JiraBot  :   " + 'finish')
 

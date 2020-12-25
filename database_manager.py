@@ -146,7 +146,7 @@ class database_manager:
             cursor = conn.cursor()
             # Обновляем данные в таблице
             query = """
-                    UPDATE %s SET condition = '%s', project_name = '%s',
+                    UPDATE %s SET condition = '%s', project_name = '%s'
                     WHERE group_name = '%s' AND owner_name = '%s' AND name = '%s'
                     """ % (self.table_name_filters, condition.replace("'", '"'), project_name, group_name,
                             owner_name, filter_name)

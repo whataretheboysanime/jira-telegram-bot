@@ -74,7 +74,7 @@ class jira_manager:
     def get_outer_issue_by_filter(self, filter_outer):
         return self.jira_outer.search_issues(filter_outer, maxResults=1000)
 
-    def get_bank_issues(self, filter_name, owner_name, condition):
+    def get_notification_issues(self, filter_name, owner_name, condition):
         messages = []
 
         issues = []

@@ -100,11 +100,10 @@ def bot_polling():
 
                 if len(input) == 2 and "/create" in message.html_text and hasattr(message, "reply_to_message"):
 
-                    jira_outer_session = jira.check_jira_outer_session()
                     issue_key = message.reply_to_message.html_text.split(" ")[0]
                     project_name = message.html_text.split(" ")[1]
 
-                    result = jira.create_issue(project_name, issue_key, jira_outer_session)
+                    result = jira.create_issue(project_name, issue_key)
                     if result == "Success":
                         bot.send_message(message.chat.id, settings['Command messages']['create issue success'])
                     else:
@@ -112,11 +111,10 @@ def bot_polling():
 
                 elif len(input) == 3 and "/create" in message.html_text:
 
-                    jira_outer_session = jira.check_jira_outer_session()
                     project_name = message.html_text.split(" ")[1]
                     issue_key = message.html_text.split(" ")[2]
 
-                    result = jira.create_issue(project_name, issue_key, jira_outer_session)
+                    result = jira.create_issue(project_name, issue_key)
                     if result == "Success":
                         bot.send_message(message.chat.id, settings['Command messages']['create issue success'])
                     else:

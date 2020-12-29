@@ -19,7 +19,7 @@ try:
     filters = jira.db.get_filters_by_group('notification')
 
     def mailing(filter):
-        issues_obj = jira.get_bank_issues(filter['name'], filter['owner_name'], filter['condition'])
+        issues_obj = jira.get_notification_issues(filter['name'], filter['owner_name'], filter['condition'])
 
         if issues_obj['Messages']:
             users = jira.db.get_users()

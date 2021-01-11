@@ -88,4 +88,4 @@ except Exception as e:
                   'Отправка email (JiraBot - error):\n' +
                  str(e) + "\n\n" + traceback.format_exc()
                   )
-    email_utils.send_email("TelegramBot - error", str(e) + "\n\n" + traceback.format_exc())
+    email_utils.send_email("JiraBot - error", str(e) + "\n\n" + traceback.format_exc())

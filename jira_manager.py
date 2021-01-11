@@ -173,7 +173,8 @@ class jira_manager:
         if hasattr(issue.fields, 'attachment'):
             attachments = issue.fields.attachment
             for attach in attachments:
-                self.jira_inner.add_attachment(issue=new_issue, attachment=attach.get(), filename=attach.filename)
+                if attach.size < 10485760:
+                    self.jira_inner.add_attachment(issue=new_issue, attachment=attach.get(), filename=attach.filename)
 
         logging.info(
             datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " + "End create_issue")
@@ -254,15 +255,17 @@ class jira_manager:
 
                     for outer_attach in outer_attachments:
 
-                        is_attach_find = False
+                        if outer_attach.size < 10485760:
 
-                        for inner_attach in inner_attachments:
-                            if outer_attach.filename == inner_attach.filename:
-                                is_attach_find = True
-                                break
+                            is_attach_find = False
 
-                        if not is_attach_find:
-                            self.jira_inner.add_attachment(issue=inner_issue, attachment=outer_attach.get(), filename=outer_attach.filename)
+                            for inner_attach in inner_attachments:
+                                if outer_attach.filename == inner_attach.filename:
+                                    is_attach_find = True
+                                    break
+
+                            if not is_attach_find:
+                                self.jira_inner.add_attachment(issue=inner_issue, attachment=outer_attach.get(), filename=outer_attach.filename)
 
                 logging.info(
                     datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " + "End update issue")

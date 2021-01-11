@@ -216,8 +216,10 @@ def bot_polling():
     except Exception as e:
 
         traceback_str = traceback.format_exc()
+        errors_for_reexecute = ["Read timed out.", "Connection aborted.", "Unable to esablish a connection with the database.",
+                                "PollingThread"]
 
-        if "Read timed out." in traceback_str or "Connection aborted." in traceback_str:
+        if any(error in traceback_str for error in errors_for_reexecute):
             bot_polling()
         else:
             cur_date = datetime.now().strftime("%Y-%m-%d")

@@ -84,8 +84,12 @@ try:
 
 except Exception as e:
 
-    logging.info(datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " +
-                  'Отправка email (JiraBot - error):\n' +
-                 str(e) + "\n\n" + traceback.format_exc()
-                  )
-    email_utils.send_email("JiraBot - error", str(e) + "\n\n" + traceback.format_exc())
+    traceback_str = traceback.format_exc()
+    errors_for_reexecute = ['Unable to esablish a connection with the database.']
+
+    if not any(error in traceback_str for error in errors_for_reexecute):
+        logging.info(datetime.now().strftime("%d.%m.%Y, %H.%M:%S") + "   :   " +
+                      'Отправка email (JiraBot - error):\n' +
+                     str(e) + "\n\n" + traceback_str
+                      )
+        email_utils.send_email("JiraBot - error", str(e) + "\n\n" + traceback_str)

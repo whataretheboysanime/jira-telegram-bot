@@ -138,6 +138,7 @@ class jira_manager:
         issue = self.jira_outer.issue(key)
 
         issue_summary = issue.key + ' ' + issue.fields.summary
+        issue_summary = (issue_summary[:250] + '..') if len(issue_summary) > 254 else issue_summary
         issue_description = issue.fields.description
 
         # Если не передали наименование проекта, то скидываем в дефолтный
@@ -215,6 +216,7 @@ class jira_manager:
                         self.jiraInner.transition_issue(inner_issue, reopen_transition[0])
 
                 outer_issue_summary = outer_issue.key + ' ' + outer_issue.fields.summary
+                outer_issue_summary = (outer_issue_summary[:250] + '..') if len(outer_issue_summary) > 254 else outer_issue_summary
                 if outer_issue_summary != inner_issue.fields.summary:
                     inner_issue.update(summary=outer_issue_summary)
 
